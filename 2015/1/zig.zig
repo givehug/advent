@@ -13,15 +13,19 @@ pub fn main() !void {
 
     // calc floors
     var floors: i64 = 0;
+    var basement_entered_at: u64 = 0;
 
-    for (chars) |char| {
+    for (chars, 0..) |char, i| {
         floors += switch (char) {
             '(' => 1,
             ')' => -1,
             else => 0,
         };
+        if (floors == -1 and basement_entered_at == 0) {
+            basement_entered_at = 1 + i;
+        }
     }
 
     // print content
-    std.debug.print("{d}\n", .{floors});
+    std.debug.print("{d}, {d}\n", .{ floors, basement_entered_at });
 }
