@@ -92,8 +92,13 @@ const findBestPlay = () => {
   const bestPLay: any = {
     goldSpend: Infinity,
     equipment: null,
+    winner: "",
   };
-  let winnerName = "";
+  const worstPlay: any = {
+    goldSpend: 0,
+    equipment: null,
+    winner: "",
+  };
 
   for (let w = 0; w < shop.weapon.length; w++) {
     const weapon = shop.weapon[w];
@@ -131,12 +136,18 @@ const findBestPlay = () => {
           }
 
           const winner = launchDuel(pc, ec);
-          winnerName = winner.player.name;
 
           if (winner === pc) {
             if (pc.player.goldSpend < bestPLay.goldSpend) {
               bestPLay.goldSpend = pc.player.goldSpend;
               bestPLay.equipment = pc.equipment;
+              bestPLay.winner = winner.player.name;
+            }
+          } else if (winner === ec) {
+            if (pc.player.goldSpend > worstPlay.goldSpend) {
+              worstPlay.goldSpend = pc.player.goldSpend;
+              worstPlay.equipment = pc.equipment;
+              worstPlay.winner = winner.player.name;
             }
           }
         }
@@ -144,7 +155,7 @@ const findBestPlay = () => {
     }
   }
 
-  return { winner: winnerName, ...bestPLay };
+  return { bestPLay, worstPlay };
 };
 
 async function main() {
