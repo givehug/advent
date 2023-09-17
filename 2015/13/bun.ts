@@ -94,6 +94,14 @@ async function main() {
   const lines = input.split("\n");
   const links = lines.map(parseLine);
 
+  // Add me
+  const people = links.map(([person]) => person);
+  const me = "me";
+  people.forEach((person) => {
+    links.push([me, person, 0]);
+    links.push([person, me, 0]);
+  });
+
   const bestSitting = findBestSitting(links);
 
   console.log(bestSitting);
