@@ -18,7 +18,7 @@ const parseLine = (line: string): Link => {
   return [person, neighbor, happiness];
 };
 
-const buildHappinessMap = (links: Link[]): HappinessMap => {
+const buildHappinessMap = (links: Link[]): [HappinessMap, TableSitting] => {
   const map: HappinessMap = {};
 
   links.forEach(([person, neighbor, happiness]) => {
@@ -28,7 +28,9 @@ const buildHappinessMap = (links: Link[]): HappinessMap => {
     map[person][neighbor] = happiness;
   });
 
-  return map;
+  const people = Object.keys(map);
+
+  return [map, people];
 };
 
 const calcTableHappiness = (table: TableSitting, map: HappinessMap) => {
@@ -45,14 +47,56 @@ const calcTableHappiness = (table: TableSitting, map: HappinessMap) => {
   return happiness;
 };
 
+const findAllPossibleSittingCombinations = (
+  table: TableSitting
+): TableSitting[] => {
+  const combinations: TableSitting[] = [];
+
+  const permute = (arr: TableSitting, m: TableSitting = []) => {
+    if (arr.length === 0) {
+      combinations.push(m);
+    } else {
+      for (let i = 0; i < arr.length; i++) {
+        const curr = arr.slice();
+        const next = curr.splice(i, 1);
+        permute(curr.slice(), m.concat(next));
+      }
+    }
+  };
+
+  permute(table);
+
+  return combinations;
+};
+
+const findBestSitting = (links: Link[]) => {
+  const [map, people] = buildHappinessMap(links);
+  const tables = findAllPossibleSittingCombinations(people);
+
+  let bestHappiness = -Infinity;
+  let bestTable = people;
+
+  tables.forEach((table) => {
+    const happiness = calcTableHappiness(table, map);
+
+    if (happiness > bestHappiness) {
+      bestHappiness = happiness;
+      bestTable = table;
+    }
+  });
+
+  return [bestTable, bestHappiness];
+};
+
 async function main() {
   const file = Bun.file("input.txt");
   const input = await file.text();
   const lines = input.split("\n");
   const links = lines.map(parseLine);
 
-  const map = buildHappinessMap(links);
-  console.log(calcTableHappiness(["Bob", "Alice", "David", "Carol"], map));
+  const bestSitting = findBestSitting(links);
+
+  console.log(bestSitting);
 }
 
 main();
