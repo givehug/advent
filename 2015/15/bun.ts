@@ -44,7 +44,11 @@ const findPossibleCombinations = (buckets: number[], amount: number) => {
   return combinations;
 };
 
-const findBestScore = (ingredients: Ingredient[], totalSpoons: number) => {
+const findBestScore = (
+  ingredients: Ingredient[],
+  totalSpoons: number,
+  calories?: number
+) => {
   const spoonDistribution = findPossibleCombinations(
     Array.from({ length: ingredients.length }, () => 0),
     totalSpoons
@@ -58,6 +62,9 @@ const findBestScore = (ingredients: Ingredient[], totalSpoons: number) => {
 
   ingredientCombos.forEach((combo) => {
     const totalScore = calcTotalScore(combo);
+    if (calories && sumProperties(combo, "calories") !== calories) {
+      return;
+    }
     if (totalScore > bestTotalScore) {
       bestTotalScore = totalScore;
     }
@@ -89,8 +96,9 @@ async function main() {
 
   const ingredients = [butterScotch, cinnamon];
   const totalSpoons = 100;
+  const calories = 500;
 
-  const bestScore = findBestScore(ingredients, totalSpoons);
+  const bestScore = findBestScore(ingredients, totalSpoons, calories);
 
   console.log(bestScore);
 }
