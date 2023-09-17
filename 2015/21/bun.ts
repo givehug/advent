@@ -10,9 +10,13 @@ type Player = {
 
 type PlayerController = {
   player: Player;
+  equipment: {
+    weapon: Equipment | undefined;
+    armor: Equipment[];
+    rings: Equipment[];
+  };
   equip: (e?: Equipment) => void;
   attack: (enemy: Player) => void;
-  reset: () => void;
 };
 
 const playerController = (initialStats: Player): PlayerController => {
@@ -60,21 +64,13 @@ const playerController = (initialStats: Player): PlayerController => {
     }
   };
 
-  const reset = () => {
-    weapon = undefined;
-    armor = [];
-    rings = [];
-    player.goldSpend = 0;
-    player.hp = initialStats.hp;
-    player.damage = initialStats.damage;
-    player.armor = initialStats.armor;
-  };
-
   return {
     player,
+    get equipment() {
+      return { weapon, armor, rings };
+    },
     attack,
     equip,
-    reset,
   };
 };
 
@@ -92,56 +88,69 @@ const launchDuel = (pc: PlayerController, ec: PlayerController) => {
   return winner;
 };
 
-const launchGame = (pc: PlayerController, ec: PlayerController) => {
-  let winner = ec;
-  let weapon = 0;
-  let armor = 0;
-  let ring1 = 0;
-  let ring2 = 0;
+const findBestPlay = () => {
+  const bestPLay: any = {
+    goldSpend: Infinity,
+    equipment: null,
+  };
+  let winnerName = "";
 
-  while (winner === ec) {
-    // TODO: buy all possible combinations (1 weapon, 0-1 armor, 0-2 rings)
-    pc.equip(shop.weapon[weapon++]);
-    pc.equip(shop.armor[armor++]);
-    pc.equip(shop.ring[ring1++]);
-    pc.equip(shop.ring[ring2++]);
+  for (let w = 0; w < shop.weapon.length; w++) {
+    const weapon = shop.weapon[w];
 
-    winner = launchDuel(pc, ec);
+    for (let a = -1; a < shop.armor.length; a++) {
+      const armor = shop.armor[a];
 
-    if (winner === ec) {
-      pc.reset();
-      ec.reset();
+      for (let r1 = -1; r1 < shop.ring.length; r1++) {
+        const ring1 = shop.ring[r1];
+
+        for (let r2 = -1; r2 < shop.ring.length; r2++) {
+          const ring2 = shop.ring[r2];
+
+          const pc = playerController({
+            name: "player",
+            hp: 100,
+            damage: 0,
+            armor: 0,
+            goldSpend: 0,
+          });
+
+          const ec = playerController({
+            name: "boss",
+            hp: 104,
+            damage: 8,
+            armor: 1,
+            goldSpend: 0,
+          });
+
+          pc.equip(weapon);
+          pc.equip(armor);
+          pc.equip(ring1);
+          if (r1 !== r2) {
+            pc.equip(ring2);
+          }
+
+          const winner = launchDuel(pc, ec);
+          winnerName = winner.player.name;
+
+          if (winner === pc) {
+            if (pc.player.goldSpend < bestPLay.goldSpend) {
+              bestPLay.goldSpend = pc.player.goldSpend;
+              bestPLay.equipment = pc.equipment;
+            }
+          }
+        }
+      }
     }
   }
 
-  return winner;
+  return { winner: winnerName, ...bestPLay };
 };
 
 async function main() {
-  const p1 = playerController({
-    name: "player",
-    hp: 100,
-    damage: 0,
-    armor: 0,
-    goldSpend: 0,
-  });
+  const bestPlay = findBestPlay();
 
-  const p2 = playerController({
-    name: "boss",
-    hp: 104,
-    damage: 8,
-    armor: 1,
-    goldSpend: 0,
-  });
-
-  const winner = launchGame(p1, p2);
-
-  console.log("\n");
-  console.log(`--- ${winner.player.name} wins! ---`);
-  console.log(`gold spent: ${winner.player.goldSpend}`);
-  console.log(`${p1.player.name} hp: ${p1.player.hp}`);
-  console.log(`${p2.player.name} hp: ${p2.player.hp}`);
-  console.log("\n");
+  console.log(bestPlay);
 }
 
 main();
