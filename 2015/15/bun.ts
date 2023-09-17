@@ -1,5 +1,3 @@
-// exactly 100 spoons
-
 type Ingredient = {
   name: string;
   capacity: number;
@@ -26,7 +24,47 @@ const calcTotalScore = (ingredients: Ingredient[]) => {
   return capacity * durability * flavor * texture;
 };
 
-const ingredients = [];
+const findPossibleCombinations = (buckets: number[], amount: number) => {
+  const combinations: number[][] = [];
+
+  if (buckets.length === 1) {
+    combinations.push([amount]);
+    return combinations;
+  }
+
+  const otherBuckets = buckets.slice(1);
+  for (let i = 0; i <= amount; i++) {
+    const otherCombinations = findPossibleCombinations(
+      otherBuckets,
+      amount - i
+    );
+    otherCombinations.forEach((c) => combinations.push([i, ...c]));
+  }
+
+  return combinations;
+};
+
+const findBestScore = (ingredients: Ingredient[], totalSpoons: number) => {
+  const spoonDistribution = findPossibleCombinations(
+    Array.from({ length: ingredients.length }, () => 0),
+    totalSpoons
+  );
+
+  const ingredientCombos = spoonDistribution.map((d) => {
+    return ingredients.map((i, j) => ({ ...i, spoons: d[j] }));
+  });
+
+  let bestTotalScore = 0;
+
+  ingredientCombos.forEach((combo) => {
+    const totalScore = calcTotalScore(combo);
+    if (totalScore > bestTotalScore) {
+      bestTotalScore = totalScore;
+    }
+  });
+
+  return bestTotalScore;
+};
 
 async function main() {
   const butterScotch = {
@@ -36,7 +74,7 @@ async function main() {
     flavor: 6,
     texture: 3,
     calories: 8,
-    spoons: 44,
+    spoons: 0,
   };
 
   const cinnamon = {
@@ -46,10 +84,15 @@ async function main() {
     flavor: -2,
     texture: -1,
     calories: 3,
-    spoons: 56,
+    spoons: 0,
   };
 
-  console.log(calcTotalScore([butterScotch, cinnamon]));
+  const ingredients = [butterScotch, cinnamon];
+  const totalSpoons = 100;
+
+  const bestScore = findBestScore(ingredients, totalSpoons);
+
+  console.log(bestScore);
 }
 
 main();
