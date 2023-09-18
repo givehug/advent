@@ -61,3 +61,7 @@ const spells: Record<SpellName, Spell> = {
 export const getSpell = (spellName: SpellName): Spell => {
   return { ...spells[spellName] };
 };
+
+export const getAllSpells = () => {
+  return Object.values(spells).map((s) => ({ ...s }));
+};

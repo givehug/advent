@@ -1,4 +1,4 @@
-import { Spell, getSpell } from "../22/spells";
+import { Spell, getAllSpells, getSpell } from "../22/spells";
 
 type Wizard = {
   mana: number;
@@ -10,12 +10,15 @@ type Wizard = {
 type Boss = {
   hp: number;
   damage: number;
-  // armor: number;
 };
 
-const launchDuel = (w: Wizard, b: Boss) => {
+const launchDuel = (
+  w: Wizard,
+  b: Boss
+): { winner: Wizard | Boss; manaSpent: number } => {
   let attacker: Wizard | Boss = w;
   let ongoingSpellEffects: Spell[] = [];
+  let manaSpent = 0;
 
   while (w.hp > 0 && b.hp > 0) {
     ongoingSpellEffects.forEach((s) => {
@@ -34,15 +37,14 @@ const launchDuel = (w: Wizard, b: Boss) => {
     if (attacker === b) {
       const damage = Math.max(1, b.damage - w.armor);
       w.hp -= damage;
-      // const damage = b.damage - w.armor;
-      // w.hp -= damage > 0 ? damage : 1;
     } else {
       const spell = w.spells.shift();
 
-      if (!spell) {
-        return b;
+      if (!spell || w.mana < spell.cost) {
+        return { winner: b, manaSpent };
       }
 
+      manaSpent += spell.cost;
       w.mana -= spell.cost;
       b.hp -= spell.damage;
       w.hp += spell.heal;
@@ -50,8 +52,10 @@ const launchDuel = (w: Wizard, b: Boss) => {
       w.mana += spell.increaseMana;
 
       if (spell.effectDurationTurns > 0) {
-        spell.effectDurationTurns--;
-        ongoingSpellEffects.push(spell);
+        ongoingSpellEffects.push({
+          ...spell,
+          effectDurationTurns: spell.effectDurationTurns - 1,
+        });
       }
     }
 
@@ -60,105 +64,124 @@ const launchDuel = (w: Wizard, b: Boss) => {
 
   const winner = w.hp > b.hp ? w : b;
 
-  return winner;
+  return { winner, manaSpent };
 };
 
-// const findBestPlay = () => {
-//   const bestPLay: any = {
-//     goldSpend: Infinity,
-//     equipment: null,
-//     winner: "",
-//   };
-//   const worstPlay: any = {
-//     goldSpend: 0,
-//     equipment: null,
-//     winner: "",
-//   };
+const findBestPlay = () => {
+  let bestPlayManaLeft = 0;
+  const allSpells = getAllSpells();
+  const limit = 10000000;
+  let count = 0;
+  const queue: Spell[][] = [];
+  let leastManaSpent = Infinity;
+  let winningSpellHAsh = "";
+  let _winner: any = null;
 
-//   for (let w = 0; w < shop.weapon.length; w++) {
-//     const weapon = shop.weapon[w];
+  allSpells.forEach((s) => queue.push([s]));
 
-//     for (let a = -1; a < shop.armor.length; a++) {
-//       const armor = shop.armor[a];
+  const boss = (): Boss => ({
+    hp: 55,
+    damage: 8,
+  });
 
-//       for (let r1 = -1; r1 < shop.ring.length; r1++) {
-//         const ring1 = shop.ring[r1];
+  const wizard = (): Wizard => ({
+    mana: 500,
+    hp: 50,
+    armor: 0,
+    spells: [],
+  });
 
-//         for (let r2 = -1; r2 < shop.ring.length; r2++) {
-//           const ring2 = shop.ring[r2];
+  while (queue.length && count < limit) {
+    const spells = queue.shift()!;
+    const spellHash = spells.map((s) => s.name).join("-");
+    count++;
 
-//           const pc = playerController({
-//             name: "player",
-//             hp: 100,
-//             damage: 0,
-//             armor: 0,
-//             goldSpend: 0,
-//           });
+    const w = wizard();
+    w.spells = [...spells];
+    const b = boss();
 
-//           const ec = playerController({
-//             name: "boss",
-//             hp: 104,
-//             damage: 8,
-//             armor: 1,
-//             goldSpend: 0,
-//           });
+    const { winner, manaSpent } = launchDuel(w, b);
+    if (winner === w) {
+      bestPlayManaLeft = Math.max(bestPlayManaLeft, w.mana);
+      if (manaSpent < leastManaSpent) {
+        winningSpellHAsh = spellHash;
+        leastManaSpent = manaSpent;
+        _winner = w;
+      }
+    }
 
-//           pc.equip(weapon);
-//           pc.equip(armor);
-//           pc.equip(ring1);
-//           if (r1 !== r2) {
-//             pc.equip(ring2);
-//           }
+    for (let i = 0; i < allSpells.length; i++) {
+      const spell = allSpells[i];
+      queue.push([...spells, spell]);
+    }
+  }
 
-//           const winner = launchDuel(pc, ec);
+  return { leastManaSpent, winningSpellHAsh, _winner };
+};
 
-//           if (winner === pc) {
-//             if (pc.player.goldSpend < bestPLay.goldSpend) {
-//               bestPLay.goldSpend = pc.player.goldSpend;
-//               bestPLay.equipment = pc.equipment;
-//               bestPLay.winner = winner.player.name;
-//             }
-//           } else if (winner === ec) {
-//             if (pc.player.goldSpend > worstPlay.goldSpend) {
-//               worstPlay.goldSpend = pc.player.goldSpend;
-//               worstPlay.equipment = pc.equipment;
-//               worstPlay.winner = winner.player.name;
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
+async function mainManual() {
+  // const w: Wizard = {
+  //   mana: 250,
+  //   hp: 10,
+  //   armor: 0,
+  //   spells: [
+  //     getSpell("Recharge"),
+  //     getSpell("Shield"),
+  //     getSpell("Drain"),
+  //     getSpell("Poison"),
+  //     getSpell("Magic Missile"),
+  //   ],
+  // };
 
-//   return { bestPLay, worstPlay };
-// };
-
-async function main() {
-  // const bestPlay = findBestPlay();
-
-  // console.log(bestPlay);
+  // const b: Boss = {
+  //   hp: 14,
+  //   damage: 8,
+  // };
 
   const w: Wizard = {
-    mana: 250,
-    hp: 10,
+    mana: 500,
+    hp: 50,
     armor: 0,
     spells: [
-      getSpell("Recharge"),
-      getSpell("Shield"),
-      getSpell("Drain"),
       getSpell("Poison"),
+      getSpell("Magic Missile"),
+      getSpell("Magic Missile"),
+      getSpell("Poison"),
+      getSpell("Magic Missile"),
+      getSpell("Magic Missile"),
       getSpell("Magic Missile"),
     ],
   };
 
   const b: Boss = {
-    hp: 14,
+    hp: 55,
     damage: 8,
   };
 
+  // "Poison-Magic Missile-Magic Missile-Poison-Magic Missile-Magic Missile-Magic Missile"
+
+  console.log("START MANUAL");
+
   const winner = launchDuel(w, b);
 
-  console.log(winner);
+  console.log("DONE MANUAL", winner);
+}
+
+async function mainAuto() {
+  console.log("START AUTO");
+
+  const bestPlay = findBestPlay();
+
+  console.log("DONE AUTO", bestPlay);
+}
+
+function main() {
+  if (Bun.argv[2] === "manual") {
+    return mainManual();
+  }
+  if (Bun.argv[2] === "auto") {
+    return mainAuto();
+  }
 }
 
 main();
