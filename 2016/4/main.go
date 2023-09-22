@@ -22,6 +22,14 @@ func (r *Room) LetterCount() map[string]int {
 	return letterCount
 }
 
+func (r *Room) Decode() string {
+	decoded := make([]rune, len(r.name))
+	for i, letter := range r.name {
+		decoded[i] = shiftLetter(letter, r.sectorID)
+	}
+	return string(decoded)
+}
+
 func (r *Room) isValid() bool {
 	letterCount := r.LetterCount()
 
@@ -74,10 +82,18 @@ func parseLine(s string) Room {
 	name := strings.Join(words, "")
 
 	return Room{
-		name,
-		sectorID,
-		checksum,
+		name:     name,
+		sectorID: sectorID,
+		checksum: checksum,
 	}
+}
+
+func shiftLetter(c rune, times int) rune {
+	// '-' was stripped out in parseLine
+	if c == '-' {
+		return ' '
+	}
+	return ((c - 'a' + rune(times)) % 26) + 'a'
 }
 
 func main() {
@@ -90,11 +106,17 @@ func main() {
 	}
 
 	realRoomSectorIdSum := 0
+	northPoleRoomSectorId := 0
 	for _, r := range rooms {
 		if r.isValid() {
 			realRoomSectorIdSum += r.sectorID
+			if strings.HasPrefix(r.Decode(), "north") {
+				northPoleRoomSectorId = r.sectorID
+			}
+
 		}
 	}
 
 	fmt.Println(realRoomSectorIdSum)
+	fmt.Println(northPoleRoomSectorId)
 }
