@@ -25,13 +25,3 @@ async function main() {
 }
 
 main();
-
-// Bun:
-// diff: 5 -> 0.16s
-// diff: 6 -> 4.46s
-// diff: 7 -> 25.38s
-
-// Node:
-// diff: 5 -> 0.33s
-// diff: 6 -> 10.49s
-// diff: 7 -> 57.32s
