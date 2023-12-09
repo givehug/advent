@@ -13,25 +13,33 @@ func parseLine(line string) (key, left, right string) {
 	return
 }
 
-// func countSteps(network map[string][2]string, instructions string) int {
-// 	key := "AAA"
-// 	steps := 0
-// 	for {
-// 		for _, turn := range instructions {
-// 			if turn == 'L' {
-// 				key = network[key][0]
-// 			} else if turn == 'R' {
-// 				key = network[key][1]
-// 			} else {
-// 				panic("Unknown turn")
-// 			}
-// 			steps++
-// 			if key == "ZZZ" {
-// 				return steps
-// 			}
-// 		}
-// 	}
-// }
+func countSteps(network map[string][2]string, instructions string, key string) int {
+	steps := 0
+	for {
+		for _, turn := range instructions {
+			if turn == 'L' {
+				key = network[key][0]
+			} else if turn == 'R' {
+				key = network[key][1]
+			} else {
+				panic("Unknown turn")
+			}
+			steps++
+			if key[2] == 'Z' {
+				return steps
+			}
+		}
+	}
+}
+
+func allSame(x []int) bool {
+	for i := 1; i < len(x); i++ {
+		if x[i] != x[0] {
+			return false
+		}
+	}
+	return true
+}
 
 func countStepsP2(network map[string][2]string, instructions string) int {
 	var keys []string
@@ -41,28 +49,27 @@ func countStepsP2(network map[string][2]string, instructions string) int {
 		}
 	}
 
-	steps := 0
+	originalSteps := make([]int, len(keys))
+	steps := make([]int, len(keys))
+	for i, key := range keys {
+		originalSteps[i] = countSteps(network, instructions, key)
+		steps[i] = originalSteps[i]
+	}
+
+	// looking for LCM
 	for {
-		for _, turn := range instructions {
-			shouldContinue := false
-			for i, key := range keys {
-				nextKey := ""
-				if turn == 'L' {
-					nextKey = network[key][0]
-				} else if turn == 'R' {
-					nextKey = network[key][1]
-				} else {
-					panic("Unknown turn")
-				}
-				if nextKey[2] != 'Z' {
-					shouldContinue = true
-				}
-				keys[i] = nextKey
+		smallestIndex := 0
+		for i := range steps {
+			if i == 0 {
+				continue
 			}
-			steps++
-			if !shouldContinue {
-				return steps
+			if steps[i] < steps[smallestIndex] {
+				smallestIndex = i
 			}
+		}
+		steps[smallestIndex] += originalSteps[smallestIndex]
+		if allSame(steps) {
+			return steps[0]
 		}
 	}
 }
